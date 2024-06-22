@@ -13,6 +13,8 @@ class SendMessage(Resource):
         username = data.get('username')
         message = data.get('message')
         
+        print(f"Server received message {message} from user {username}")
+
         if not username or not message:
             return {'error': 'Username and message are required'}, 400
         
@@ -33,3 +35,4 @@ api.add_resource(GetMessages, '/get_messages')
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
+    print(f"Server started.")

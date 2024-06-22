@@ -23,12 +23,42 @@
             "python": {
                 "pathMappings": [
                     {
-                        "localRoot": "${workspaceFolder}",
+                        "localRoot": "${workspaceFolder}/server",
                         "remoteRoot": "/app"
                     }
                 ],
                 "projectType": "flask"
             }
+        },
+        {
+            "name": "Python Debugger: Remote Attach Server",
+            "type": "debugpy",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5678
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}/server",
+                    "remoteRoot": "/app"
+                }
+            ]
+        },
+        {
+            "name": "Python: Attach to Client",
+            "type": "debugpy",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5679
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}/client",
+                    "remoteRoot": "/app"
+                }
+            ]
         }
     ]
 }

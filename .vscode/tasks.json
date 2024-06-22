@@ -3,25 +3,36 @@
 	"tasks": [
 		{
 			"type": "docker-build",
-			"label": "docker-build",
+			"label": "docker-build-server",
 			"platform": "python",
 			"dockerBuild": {
-				"tag": "chatsystem:latest",
-				"dockerfile": "${workspaceFolder}/Dockerfile",
-				"context": "${workspaceFolder}",
+				"tag": "chatsystem/server:latest",
+				"dockerfile": "${workspaceFolder}/server/Dockerfile",
+				"context": "${workspaceFolder}/server",
 				"pull": true
 			}
 		},
 		{
 			"type": "docker-run",
-			"label": "docker-run: debug",
+			"label": "docker-run-server: debug",
 			"dependsOn": [
-				"docker-build"
+				"docker-build-server"
 			],
 			"dockerRun": {
 				"env": {
 					"FLASK_APP": "server.py"
-				}
+				},
+				"ports": [
+					{
+						"hostPort": 5000,
+						"containerPort": 5000
+					},
+					{
+						"hostPort": 5678,
+						"containerPort": 5678
+					}
+				],
+				"containerName": "server"
 			},
 			"python": {
 				"args": [
@@ -34,6 +45,42 @@
 					"5000"
 				],
 				"module": "flask"
+			}
+		},
+		{
+			"type": "docker-build",
+			"label": "docker-build-client",
+			"platform": "python",
+			"dockerBuild": {
+				"tag": "chatsystem/client:latest",
+				"dockerfile": "${workspaceFolder}/client/Dockerfile",
+				"context": "${workspaceFolder}/client",
+				"pull": true
+			}
+		},
+		{
+			"type": "docker-run",
+			"label": "docker-run-client: debug",
+			"dependsOn": [
+				"docker-build-client"
+			],
+			"dockerRun": {
+				"ports": [
+					{
+						"hostPort": 5679,
+						"containerPort": 5678
+					}
+				],
+				"containerName": "client",
+				"interactive": true,
+				"tty": true
+			},
+			"python": {
+				// "file": "client.py",
+				"args": [
+					"client.py"
+				],
+				"module": "debugpy"
 			}
 		}
 	]

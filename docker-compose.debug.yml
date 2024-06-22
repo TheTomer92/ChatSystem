@@ -1,0 +1,30 @@
+services:
+  server:
+    # image: chatsystem
+    build:
+      context: ./server
+      dockerfile: ./Dockerfile
+    command: ["sh", "-c", "pip install debugpy -t /tmp && python /tmp/debugpy --wait-for-client --listen 0.0.0.0:5678 -m flask run --no-debugger --no-reload --host 0.0.0.0 --port 5000"]
+    ports:
+      - 5000:5000
+      - 5678:5678
+    # volumes:
+    #   - .:/app
+    environment:
+      - FLASK_APP=server.py
+
+  client:
+    build:
+      context: ./client
+      dockerfile: ./Dockerfile
+    depends_on:
+      - server
+    ports:
+      - "5679:5678"  # Remap client debug port to avoid conflict with server
+    tty: true
+    stdin_open: true
+    # volumes:
+    #   - .:/app
+    # command: ["python", "-m", "debugpy", "--listen", "0.0.0.0:5678", "client.py"]
+    command: ["sh", "-c", "pip install debugpy -t /tmp && python /tmp/debugpy --wait-for-client --listen 0.0.0.0:5678 -m client"]
+  

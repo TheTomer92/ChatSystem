@@ -1,9 +1,22 @@
 services:
+
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: "chat"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "password"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  
   server:
-    # image: chatsystem
     build:
       context: ./server
       dockerfile: ./Dockerfile
+    depends_on:
+      - db
     command: ["sh", "-c", "pip install debugpy -t /tmp && python /tmp/debugpy --wait-for-client --listen 0.0.0.0:5678 -m flask run --no-debugger --no-reload --host 0.0.0.0 --port 5000"]
     ports:
       - 5000:5000
@@ -11,8 +24,9 @@ services:
     # volumes:
     #   - .:/app
     environment:
-      - FLASK_APP=server.py
-
+      - FLASK_APP: "server.py"
+      - DATABASE_URL: "postgresql://postgres:password@db:5432/chat"
+  
   client:
     build:
       context: ./client
@@ -27,4 +41,6 @@ services:
     #   - .:/app
     # command: ["python", "-m", "debugpy", "--listen", "0.0.0.0:5678", "client.py"]
     command: ["sh", "-c", "pip install debugpy -t /tmp && python /tmp/debugpy --wait-for-client --listen 0.0.0.0:5678 -m client"]
-  
+
+volumes:
+    postgres_data:

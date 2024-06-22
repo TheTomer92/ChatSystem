@@ -17,7 +17,8 @@ class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), nullable=False)
     message = db.Column(db.String(200), nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    room = db.Column(db.String(80), nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.datetime.now)
 
 with app.app_context():
     db.create_all()
@@ -27,23 +28,28 @@ class SendMessage(Resource):
         data = request.get_json()
         username = data.get('username')
         message = data.get('message')
-      
-        print(f"Server received message {message} from user {username}")
+        room = data.get('room')
+    
+        print(f"Server received message {message} from user {username} at room {room}")
 
-        if not username or not message:
-            return {'error': 'Username and message are required'}, 400
+        if not username or not message or not room:
+            return {'error': 'Username, message, and room are required'}, 400
         
-        message_entry = Message(username=username, message=message)
+        message_entry = Message(username=username, message=message, room=room)
         db.session.add(message_entry)
         db.session.commit()
 
-        print(f"Server stored message {message} from user {username}")
+        print(f"Server stored message {message} from user {username} at room {room}")
 
         return {'message': 'Message sent successfully'}, 201
 
 class GetMessages(Resource):
     def get(self):
-        messages = Message.query.order_by(Message.timestamp.asc()).all()
+        room = request.args.get('room')
+        if not room:
+            return {'error': 'Room is required'}, 400
+        
+        messages = Message.query.filter_by(room=room).order_by(Message.timestamp.asc()).all()
         messages_list = [{'username': m.username, 'message': m.message, 'timestamp': m.timestamp.isoformat()} for m in messages]
         return jsonify(messages_list)
 

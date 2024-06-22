@@ -2,7 +2,7 @@
 FROM python:3-slim
 
 # Make port 5678 available to the world outside this container
-EXPOSE 5678
+# EXPOSE 5678
 
 # Set the working directory to /app
 WORKDIR /app

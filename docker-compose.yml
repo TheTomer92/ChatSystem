@@ -19,7 +19,7 @@ services:
       - db
     ports:
       - "5000:5000"
-      - "5678:5678"
+      # - "5678:5678"
     environment:
       - FLASK_APP=server.py
     # volumes:
@@ -29,8 +29,8 @@ services:
     build:
       context: ./client
       dockerfile: ./Dockerfile
-    ports:
-      - "5679:5678"  # Remap client debug port to avoid conflict with server
+    # ports:
+    #   - "5679:5678"  # Remap client debug port to avoid conflict with server
     depends_on:
       - server
     tty: true

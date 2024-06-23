@@ -30,6 +30,12 @@ class Message(db.Model):
     room = db.Column(db.String(80), nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.datetime.now)
 
+class MessageStatus(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    message_id = db.Column(db.Integer, nullable=False)
+    username = db.Column(db.String(80), nullable=False)
+    seen = db.Column(db.Boolean, default=False)
+    
 with app.app_context():
     db.create_all()
 
@@ -152,10 +158,31 @@ def on_new_message(data):
         'username': username,
         'message': message,
         'room': room,
-        'timestamp': message_entry.timestamp.isoformat()
+        'timestamp': message_entry.timestamp.isoformat(),
+        'message_id': message_entry.id
     }, to=room)
 
     print(f"Server sent message {message} from user {username} to room {room}")
+
+@socketio.on('message_seen')
+def on_message_seen(data):
+    message_id = data.get('message_id')
+    username = data.get('username')
+    room = data.get('room')
+
+    status = MessageStatus.query.filter_by(message_id=message_id, username=username).first()
+    if not status:
+        status = MessageStatus(message_id=message_id, username=username, seen=True)
+        db.session.add(status)
+    else:
+        status.seen = True
+    db.session.commit()
+
+    emit('message_seen_ack', {
+        'username': username,
+        'message_id': message_id,
+        'room': room
+    }, to=room)
 
 if __name__ == '__main__':
     socketio.run(app, debug=True, host='0.0.0.0', port=5000)

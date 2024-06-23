@@ -23,6 +23,18 @@ def disconnect():
 def new_room_message(data):
     print(f"[{data['timestamp']}] {data['username']}: {data['message']}")
 
+    # Send acknowledgment for the received message
+    sio.emit('message_seen', {
+        'username': username,
+        'message_id': data['message_id'],
+        'room': room,
+        'token': token
+    })
+
+@sio.event
+def message_seen_ack(data):
+    print(f"Message {data['message_id']} seen by {data['username']}")
+    
 def register():
     global username
     print("### Register ###")

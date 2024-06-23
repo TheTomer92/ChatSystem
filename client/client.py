@@ -1,9 +1,9 @@
 import requests
-# import threading
 import time
 import socketio
+import signal
+import sys
 
-# Server URL
 SERVER_URL = "http://server:5000"
 
 sio = socketio.Client()
@@ -11,19 +11,21 @@ token = None
 username = None
 room = None
 
+
 @sio.event
 def connect():
     print("Connected to the server")
+
 
 @sio.event
 def disconnect():
     print("Disconnected from the server")
 
+
 @sio.event
 def new_room_message(data):
     print(f"[{data['timestamp']}] {data['username']}: {data['message']}")
 
-    # Send acknowledgment for the received message
     sio.emit('message_seen', {
         'username': username,
         'message_id': data['message_id'],
@@ -31,10 +33,12 @@ def new_room_message(data):
         'token': token
     })
 
+
 @sio.event
 def message_seen_ack(data):
     print(f"Message {data['message_id']} seen by {data['username']}")
-    
+
+
 def register():
     global username
     print("### Register ###")
@@ -42,6 +46,7 @@ def register():
     password = input("Enter your password: ")
     response = requests.post(f"{SERVER_URL}/register", json={'username': username, 'password': password})
     print(response.json())
+
 
 def login():
     global token, username
@@ -59,8 +64,18 @@ def login():
         else:
             print("Login failed. Please try again.")
 
+
+def cleanup(signum, frame):
+    global username, room, token
+    if sio.connected:
+        sio.emit('leave', {'username': username, 'room': room, 'token': token})
+        sio.disconnect()
+    sys.exit(0)
+
 def main():
-    global room
+    global room, username, token
+
+    signal.signal(signal.SIGINT, cleanup)  # Capture Ctrl+C signal and call cleanup
 
     while True:
         choice = input("Do you want to (1) Register or (2) Login? Enter 1 or 2: ")
@@ -85,8 +100,8 @@ def main():
             sio.emit('new_message', {'username': username, 'message': message, 'room': room, 'token': token})
             time.sleep(1)
     except KeyboardInterrupt:
-        sio.emit('leave', {'username': username, 'room': room, 'token': token})
-        sio.disconnect()
+        pass
+
 
 if __name__ == "__main__":
     main()

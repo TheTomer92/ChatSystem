@@ -21,7 +21,8 @@ services:
       - "5000:5000"
       # - "5678:5678"
     environment:
-      - FLASK_APP=server.py
+      FLASK_APP: "server.py"
+      SECRET_KEY: "dd0ab2cc9d93e63b5218b59e511ee316e4585f062dca1570e84a8c13fb08701c"
     # volumes:
     #   - .:/app
 

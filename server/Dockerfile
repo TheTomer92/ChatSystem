@@ -19,8 +19,12 @@ COPY . /app
 
 # Creates a non-root user with an explicit UID and adds permission to access the /app folder
 # For more info, please refer to https://aka.ms/vscode-docker-python-configure-containers
-RUN adduser -u 5678 --disabled-password --gecos "" appuser && chown -R appuser /app
-USER appuser
+# RUN adduser -u 5678 --disabled-password --gecos "" appuser && chown -R appuser /app
+# USER appuser
 
 # During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "server:app"]
+# CMD ["gunicorn","--timeout", "1000", "--bind", "0.0.0.0:5000", "server:app"]
+CMD ["python", "server.py"]
+# CMD ["gunicorn", "-k", "eventlet", "--workers", "9", "--bind", "0.0.0.0:5000", "server:app"]
+# CMD ["gunicorn", "--workers", "2", "--timeout", "1000", "--bind", "0.0.0.0:5000", "server:app"]
+# CMD ["gunicorn", "-k", "eventlet", "--workers", "2", "--timeout", "1000", "--bind", "0.0.0.0:5000", "server:app"]

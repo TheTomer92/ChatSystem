@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_restful import Resource, Api
 from flask_sqlalchemy import SQLAlchemy
+from flask_socketio import SocketIO, join_room, leave_room, send, emit
 import datetime
 import os
 
@@ -12,6 +13,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
+socketio = SocketIO(app, async_mode='eventlet')
 
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -22,26 +24,6 @@ class Message(db.Model):
 
 with app.app_context():
     db.create_all()
-
-class SendMessage(Resource):
-    def post(self):
-        data = request.get_json()
-        username = data.get('username')
-        message = data.get('message')
-        room = data.get('room')
-    
-        print(f"Server received message {message} from user {username} at room {room}")
-
-        if not username or not message or not room:
-            return {'error': 'Username, message, and room are required'}, 400
-        
-        message_entry = Message(username=username, message=message, room=room)
-        db.session.add(message_entry)
-        db.session.commit()
-
-        print(f"Server stored message {message} from user {username} at room {room}")
-
-        return {'message': 'Message sent successfully'}, 201
 
 class GetMessages(Resource):
     def get(self):
@@ -54,9 +36,60 @@ class GetMessages(Resource):
         return jsonify(messages_list)
 
 api = Api(app)
-api.add_resource(SendMessage, '/send_message')
 api.add_resource(GetMessages, '/get_messages')
 
+@socketio.on('join')
+def on_join(data):
+    username = data['username']
+    room = data['room']
+
+    print(f"{username} joining the room {room}.")
+
+    join_room(room)
+    
+    print(f"{username} joined the room {room}.")
+    
+    send(f'{username} has joined the room.', to=room)
+
+@socketio.on('leave')
+def on_leave(data):
+    username = data['username']
+    room = data['room']
+
+    print(f"{username} leaveing the room {room}.")
+
+    leave_room(room)
+
+    print(f"{username} left the room {room}.")
+
+    send(f'{username} has left the room.', to=room)
+
+@socketio.on('new_message')
+def on_new_message(data):
+    username = data.get('username')
+    message = data.get('message')
+    room = data.get('room')
+
+    print(f"Server received message {message} from user {username} in room {room}")
+
+    if not username or not message or not room:
+        return {'error': 'Username, message, and room are required'}, 400
+    
+    message_entry = Message(username=username, message=message, room=room)
+    db.session.add(message_entry)
+    db.session.commit()
+
+    print(f"Server stored message {message} from user {username} in room {room}")
+
+    emit('new_room_message', {
+        'username': username,
+        'message': message,
+        'room': room,
+        'timestamp': message_entry.timestamp.isoformat()
+    }, to=room)
+
+    print(f"Server sent message {message} from user {username} to room {room}")
+
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    socketio.run(app, debug=True, host='0.0.0.0', port=5000)
     print(f"Server started.")
